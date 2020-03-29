@@ -120,6 +120,15 @@ ctx._source.total_occurrences += params.count;";
             return FindAsync(q => query, options);
         }
 
+        public Task<FindResults<Stack>> GetIdsByFilterAsync(AppFilter systemFilter, string userFilter, DateTime utcStart, DateTime utcEnd, CommandOptionsDescriptor<Stack> options = null) {
+            IRepositoryQuery<Stack> query = new RepositoryQuery<Stack>()
+                .DateRange(utcStart, utcEnd, InferField(s => s.FirstOccurrence))
+                .AppFilter(systemFilter)
+                .FilterExpression(userFilter);
+
+            return FindAsync(q => query.OnlyIds(), options);
+        }
+
         public async Task MarkAsRegressedAsync(string stackId) {
             var stack = await GetByIdAsync(stackId).AnyContext();
             stack.Status = StackStatus.Regressed;
