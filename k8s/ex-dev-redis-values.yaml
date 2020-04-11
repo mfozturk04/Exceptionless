@@ -42,7 +42,7 @@ image:
 ## Cluster settings
 cluster:
   enabled: false
-  slaveCount: 1
+  slaveCount: 2
 
 ## Use redis sentinel in the redis pod. This will disable the master and slave services and
 ## create one redis service with ports to the sentinel and the redis instances
@@ -72,7 +72,7 @@ sentinel:
     ##
     # pullSecrets:
     #   - myRegistryKeySecretName
-  masterSet: mymaster
+  masterSet: exceptionless
   initialCheckTimeout: 5
   quorum: 2
   downAfterMilliseconds: 60000
@@ -107,10 +107,10 @@ sentinel:
     failureThreshold: 5
   ## Redis Sentinel resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  # resources:
-  #   requests:
-  #     memory: 256Mi
-  #     cpu: 100m
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
   ## Redis Sentinel Service properties
   service:
     ##  Redis Sentinel Service type
@@ -258,8 +258,8 @@ master:
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   resources:
     requests:
-      memory: 512Mi
-      cpu: 500m
+      memory: 256Mi
+      cpu: 100m
   ## Use an alternate scheduler, e.g. "stork".
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
   ##
@@ -317,7 +317,7 @@ master:
   ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
   ##
   persistence:
-    enabled: true
+    enabled: false
     ## The path the volume will be mounted at, useful when using different
     ## Redis images.
     path: /data
@@ -418,8 +418,8 @@ slave:
   ## Redis slave Resource
   resources:
     requests:
-      memory: 512Mi
-      cpu: 500m
+      memory: 256Mi
+      cpu: 100m
 
   ## Redis slave selectors and tolerations for pod assignment
   # nodeSelector: {"beta.kubernetes.io/arch": "amd64"}
@@ -475,7 +475,7 @@ slave:
 ## Prometheus Exporter / Metrics
 ##
 metrics:
-  enabled: true
+  enabled: false
 
   image:
     registry: docker.io
