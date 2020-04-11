@@ -11,7 +11,6 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 ### setup
-
 RESOURCE_GROUP=exceptionless-v6
 CLUSTER=ex-k8s-v6
 VNET=ex-net-v6
@@ -20,6 +19,10 @@ ENV=dev
 # it's important to have a decent sized network (reserve a /16 for each cluster).
 az network vnet create -g $RESOURCE_GROUP -n $VNET --subnet-name $CLUSTER --address-prefixes 10.60.0.0/16 --subnet-prefixes 10.60.0.0/18 --location eastus
 SUBNET_ID="$(az network vnet subnet list --resource-group $RESOURCE_GROUP --vnet-name $VNET --query '[0].id' --output tsv)"
+
+# create new service principal and update the cluster to use it (seems these expire after a year)
+az ad sp create-for-rbac --skip-assignment --name $CLUSTER
+az aks update-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER --reset-service-principal --service-principal $SP_ID --client-secret $SP_SECRET
 
 az aks create \
     --resource-group $RESOURCE_GROUP \
@@ -40,9 +43,9 @@ az aks create \
 
 az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER --overwrite-existing
 
-# install dashboard, using 2.0 rc6 that supports CRDs (elastic operator)
+# install dashboard, using 2.0 rc7 that supports CRDs (elastic operator)
 # https://github.com/kubernetes/dashboard/releases
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc6/aio/deploy/recommended.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc7/aio/deploy/recommended.yaml
 
 # create admin user to login to the dashboard
 kubectl apply -f admin-service-account.yaml
@@ -71,11 +74,11 @@ ELASTIC_PASSWORD=$(kubectl get secret "ex-$ENV-es-elastic-user" -o go-template='
 kubectl port-forward service/ex-$ENV-es-http 9200
 
 # install nginx ingress
-helm install nginx-ingress stable/nginx-ingress --namespace kube-system --values nginx-values.yaml
+helm install nginx-ingress stable/nginx-ingress --namespace nginx-ingress --values nginx-values.yaml
 
 # wait for external ip to be assigned
-kubectl get service -l app=nginx-ingress --namespace kube-system
-IP="$(kubectl get service -l app=nginx-ingress --namespace kube-system -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')"
+kubectl get service -l app=nginx-ingress --namespace nginx-ingress
+IP="$(kubectl get service -l app=nginx-ingress --namespace nginx-ingress -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')"
 PUBLICIPID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$IP')].[id]" --output tsv)
 az network public-ip update --ids $PUBLICIPID --dns-name $CLUSTER
 
@@ -125,6 +128,13 @@ SERVICE_PRINCIPAL=`az ad sp create-for-rbac --role="Azure Kubernetes Service Clu
 AZ_USERNAME=`echo $SERVICE_PRINCIPAL | jq -r '.appId'`
 AZ_PASSWORD=`echo $SERVICE_PRINCIPAL | jq -r '.password'`
 echo "AZ_USERNAME=$AZ_USERNAME AZ_PASSWORD=$AZ_PASSWORD AZ_TENANT=$AZ_TENANT | az login --service-principal --username \$AZ_USERNAME --password \$AZ_PASSWORD --tenant \$AZ_TENANT"
+
+# create new service principal and update the cluster to use it (seems these expire after a year)
+# https://docs.microsoft.com/en-us/azure/aks/update-credentials
+SERVICE_PRINCIPAL=`az ad sp create-for-rbac --skip-assignment --name $CLUSTER -o json`
+AZ_USERNAME=`echo $SERVICE_PRINCIPAL | jq -r '.appId'`
+AZ_PASSWORD=`echo $SERVICE_PRINCIPAL | jq -r '.password'`
+az aks update-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER --reset-service-principal --service-principal $AZ_USERNAME --client-secret $AZ_PASSWORD
 
 # delete the entire thing
 az aks delete --resource-group $RESOURCE_GROUP --name $CLUSTER
