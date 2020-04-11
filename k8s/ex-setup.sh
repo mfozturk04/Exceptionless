@@ -94,7 +94,8 @@ kubectl apply -f certificates.yaml
 kubectl describe certificate -n tls-secret
 
 # install redis server
-helm install ex-$ENV-redis stable/redis --values redis-values.yaml --namespace ex-$ENV
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install ex-$ENV-redis bitnami/redis --values redis-values.yaml --namespace ex-$ENV
 
 # install exceptionless app
 APP_TAG="2.8.1502-pre"
