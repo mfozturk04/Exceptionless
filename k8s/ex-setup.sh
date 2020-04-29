@@ -147,3 +147,12 @@ az aks delete --resource-group $RESOURCE_GROUP --name $CLUSTER
 # kubectl -n goldilocks port-forward svc/goldilocks-dashboard 8080:80
 
 # kubectl port-forward --namespace kubecost deployment/kubecost-cost-analyzer 9090
+
+# think about using this instead of kubecost
+# https://github.com/helm/charts/tree/master/stable/prometheus-operator
+
+### TODO
+# monitor resource usages over next week
+# set resource request and limits
+# scale ES up to 4 nodes
+# change VM reserved instances to 5 instead of 4
