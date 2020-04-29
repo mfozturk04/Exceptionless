@@ -141,3 +141,9 @@ az aks update-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER --res
 az aks delete --resource-group $RESOURCE_GROUP --name $CLUSTER
 
 # https://support.binarylane.com.au/support/solutions/articles/1000055889-how-to-benchmark-disk-i-o
+
+# https://github.com/FairwindsOps/goldilocks
+# https://www.fairwinds.com/news/introducing-goldilocks-a-tool-for-recommending-resource-requests
+# kubectl -n goldilocks port-forward svc/goldilocks-dashboard 8080:80
+
+# kubectl port-forward --namespace kubecost deployment/kubecost-cost-analyzer 9090
