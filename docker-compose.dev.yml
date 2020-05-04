@@ -5,6 +5,9 @@ services:
     depends_on:
       - elasticsearch
       - redis
+    build:
+      context: .
+      target: api
     image: exceptionless/api:latest
     environment:
       EX_AppMode: Production
@@ -26,6 +29,9 @@ services:
   jobs:
     depends_on:
       - api
+    build:
+      context: .
+      target: job
     image: exceptionless/job:latest
     environment:
       EX_AppMode: Production
